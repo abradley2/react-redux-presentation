@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' />
+  <title>big</title>
+  <link href='big.css' rel='stylesheet' type='text/css' />
+  <link href='highlight.css' rel='stylesheet' type='text/css' />
+  <style>
+    .new-shiny { background: #aaaaaa; }
+  </style>
+  <script src='big.js'></script>
+  <script src='highlight.js'></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+</head>
+<body class='light'>
+  <div><h1 id="kewl-react-and-redux-stuff">Kewl React and Redux Stuff</h1>
+<ul>
+<li>Dis gonna be pretty technical</li>
+<li>But there will also be some useful theoretical concepts too</li>
+<li>-that I stole from smarter people</li>
+</ul>
+</div>
+<div><h1 id="disclaimer">Disclaimer</h1>
+<p>Opinions are my own and not necessarily that of my employer the Weyland Yutani Corporation.</p>
+</div>
+<div><h1 id="disclaimer-numero-duo">Disclaimer Numero Duo</h1>
+<p>There&#39;s still alot of debate about best practices and techniques for React and Redux</p>
+<p>I <code>&lt;3</code> talking about functional programming, so talk to me about this stuff pls!</p>
+<p><small>I&#39;m so lonely...</small></p>
+</div>
+<div><h1 id="the-dom">The DOM</h1>
+<ol>
+<li>It&#39;s a JavaScript representation of what&#39;s currently on the page. When you manipulate
+the DOM the browser will then manipulate what it&#39;s showing accordingly.</li>
+</ol>
+<p>Everything you see on the browser is an element, that generally has three things</p>
+<ol>
+<li>A type</li>
+<li>Attributes</li>
+<li>Children</li>
+</ol>
+<p>Something something polymorphism</p>
+</div>
+<div><h1 id="the-virtual-dom">The virtual dom</h1>
+<p>There are many different implementations but they all have a similar overarching flow</p>
+<ol>
+<li>Creates an initial vdom tree (just a POJO really)</li>
+<li>walks down the POJO doing document.createElement calls, appends the final element</li>
+<li>On update, creates a shiny new vnode tree</li>
+<li>&quot;Diffs&quot; the vdom against the real dom and patches it</li>
+</ol>
+</div>
+<div><h1 id="create-an-initial-vnode-tree">Create an initial vnode tree</h1>
+<pre><code>function (props) {
+  return
+    &lt;div id=&quot;hi&quot;&gt;
+      &lt;h3&gt;{props.message}&lt;/h3&gt;
+      &lt;ul&gt;
+        &lt;li&gt;one&lt;/li&gt;
+        &lt;li&gt;two&lt;/li&gt;
+      &lt;/ul&gt;
+    &lt;/div&gt;
+}
+</code></pre><pre><code>function (props) {
+  return
+    React.createElement(
+      &#39;div&#39;,
+      {id: &#39;hi&#39;},
+      React.createElement(&#39;h3&#39;, {}, props.message)
+      React.createElement(
+        &#39;ul&#39;,
+        {},
+        React.createElement(&#39;li&#39;, {}, &#39;one&#39;),
+        React.createElement(&#39;li&#39;, {}, &#39;two&#39;)
+      )
+    )
+}
+</code></pre></div>
+<div><h1 id="react-createelement-makes-a-pojo-out-of-its-args">React.createElement makes a POJO out of its args</h1>
+<p>This is actually super simplified, what React makes has alot more fluff
+and stuff on the object.</p>
+<pre><code>{ type: &#39;div&#39;,
+  attributes: {id: &#39;hi&#39;},
+  children: [
+    { type: &#39;h3&#39;,
+      attributes: {},
+      children: [ { type: &#39;textNode&#39;, text: &quot;IM A MESSAGE&quot; } ]
+    }
+    { type: &#39;ul&#39;,
+      attributes: {},
+      children: [
+        { type: &#39;li&#39;,
+          attributes: {},
+          children: [ { type: &#39;textNode&#39;, text: &#39;one&#39; } ]
+        },
+        { type: &#39;li&#39;,
+          attributes: {},
+          children: [ { type: &#39;textNode&#39;, text: &#39;two&#39; }]
+        }
+      ]
+    }
+  ]
+}
+</code></pre></div>
+<div><h1 id="using-this-stuff-to-render-stuff">Using this stuff to render stuff</h1>
+<p>Once again, React has alot more ceremony around this...</p>
+<pre><code>function render(vnode, element) {
+  if (vnode.type === &#39;textNode&#39;)
+    return element.appendChild(document.createTextNode(vnode.text))
+
+  // create a the element
+  const el = document.createElement(vnode.type)
+
+  // give it some attributes
+  Object.keys(vnode.attributes).forEach(attributeName =&gt; {
+    el.setAttribute(attributeName, vnode.attributes[attributeName])
+  })
+
+  // render the children
+  vnode.children.forEach(child =&gt; render(child, el))
+
+  // mount
+  element.appendChild(el)
+}
+</code></pre></div>
+<div><h1 id="diffing-and-patching-">Diffing and Patching!</h1>
+<p>You can diff the new vdom against the old vdom for a clean diff OR
+&quot;diff&quot; the new vdom against the dom as is. Latter approach is generally
+more efficient.</p>
+</div>
+<div><h1 id="virtual-dom">Virtual DOM</h1>
+<p>There&#39;s a ton of virtual dom libraries out there like React. They all work pretty
+similar.</p>
+<ul>
+<li>Cycle</li>
+<li>Mithril</li>
+<li>Preact</li>
+<li>Inferno</li>
+<li>Choo</li>
+<li>Yo-Yo</li>
+<li>Elm</li>
+</ul>
+</div>
+<div><h1 id="the-synthetic-event-system-">The synthetic event system!</h1>
+<p>Here&#39;s an input that doesn&#39;t work</p>
+<p><a href="https://codepen.io/abradley2/pen/GMVQgQ?editors=1010">https://codepen.io/abradley2/pen/GMVQgQ?editors=1010</a></p>
+<p>Here&#39;s one that does work though!</p>
+<p><a href="https://codepen.io/abradley2/pen/qPexZr?editors=1010">https://codepen.io/abradley2/pen/qPexZr?editors=1010</a></p>
+<p>And now let&#39;s make the latter example not work by forcing a re-render</p>
+<p><a href="https://codepen.io/abradley2/pen/KXOQWO?editors=1010">https://codepen.io/abradley2/pen/KXOQWO?editors=1010</a></p>
+</div>
+<div><h1 id="patching-in-action-">Patching in action!</h1>
+<p><a href="https://codepen.io/abradley2/pen/MENQra?editors=0010">https://codepen.io/abradley2/pen/MENQra?editors=0010</a></p>
+</div>
+<div><h1 id="the-redux-pattern-in-a-nutshell">The Redux Pattern in a nutshell</h1>
+<p><a href="https://martinfowler.com/eaaDev/EventSourcing.html">https://martinfowler.com/eaaDev/EventSourcing.html</a></p>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><em>&quot;Event Sourcing ensures that all changes to application state are stored as a sequence of events. Not just can we query these events, we can also use the event log to reconstruct past states, and as a foundation to automatically adjust the state to cope with retroactive changes.&quot;</em></p>
+</blockquote>
+</blockquote>
+</blockquote>
+<p>Redux is pretty close to event-sourcing</p>
+</div>
+<div><p><em>&quot;If you&#39;ve used any VCS you&#39;ve used event sourcing&quot;</em></p>
+</div>
+<div><h1 id="-actions-">&quot;Actions&quot;</h1>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><em>&quot;We went with what&#39;s familiar to the target audience.
+The original target audience of Redux were Flux developers,
+so we considered it important to keep the Flux meaning of “action”.</em></p>
+</blockquote>
+</blockquote>
+</blockquote>
+<p><a href="https://github.com/reactjs/redux/issues/891#issuecomment-147666329">https://github.com/reactjs/redux/issues/891#issuecomment-147666329</a></p>
+</div>
+<div><h1 id="wat-an-action-looks-like">Wat an &quot;action&quot; looks like</h1>
+<pre><code>{
+  type: &quot;BUTTON_PRESSED&quot;,
+  buttonWasBlue: true
+}
+</code></pre><p>They&#39;re more nouns than verbs really</p>
+<p><a href="https://github.com/reactjs/redux/issues/384">https://github.com/reactjs/redux/issues/384</a></p>
+</div>
+<div><h1 id="-sequence-of-events-actions-">&quot;Sequence of events/actions&quot;</h1>
+<pre><code>const initialState = {
+  message: &#39;hi&#39;,
+  toggle: false
+}
+
+const actions = [
+  { type: &#39;SET_MESSAGE&#39;, newMessage: &#39;hi there&#39; },
+  { type: &#39;TOGGLE_THING&#39;, toggleTo: true }
+]
+
+function reducerFunc(state, action) { ... }
+
+const finalState = actions.reduce(reducerFunc, initialState)
+</code></pre></div>
+<div><h1 id="what-a-reducer-looks-like">What a reducer looks like</h1>
+<pre><code>const {set} = require(&#39;icepick&#39;)
+
+function (state, action) {
+  // we generally use a convention for categorizing actions so we can
+
+  switch(action.type) {
+    case &quot;NEW_MESSAGE&quot;:
+      return set(state, &#39;message&#39;, action.newMessage)
+    case &quot;TOGGLE_INVERTED&quot;:
+      return set(state, &#39;toggle&#39;, !state.toggle)
+    default:
+      return state
+  }
+}
+</code></pre></div>
+<div><p>Notice above we don&#39;t mutate state, we rather we return a new copy.</p>
+</div>
+<div><p>But we cheat! Since the main benefit of &quot;create new, don&#39;t mutate&quot; is diffs,
+then the only thing we need to be immutable are those parts of state we touch.</p>
+<p>Therefore we can be &quot;immutable, but performant&quot; because we aren&#39;t <em>really</em>
+throwing away the entire structure.</p>
+<p><a href="https://github.com/markerikson/redux-ecosystem-links/blob/master/immutable-data.md#immutable-update-utilities">https://github.com/markerikson/redux-ecosystem-links/blob/master/immutable-data.md#immutable-update-utilities</a></p>
+</div>
+<div><h1 id="patches-">Patches!</h1>
+<pre><code>var a = [
+  { name: &#39;a&#39; },
+  { name: &#39;b&#39; },
+  { name: &#39;c&#39; },
+]
+
+var b = a.slice();
+b.splice(1, 1);
+b.push({ name: &#39;d&#39; });
+
+// Generate diff (ie JSON Patch) from a to b
+var patch = jiff.diff(a, b);
+
+// [{&quot;op&quot;:&quot;add&quot;,&quot;path&quot;:&quot;/3&quot;,&quot;value&quot;:{&quot;name&quot;:&quot;d&quot;}},{&quot;op&quot;:&quot;remove&quot;,&quot;path&quot;:&quot;/1&quot;}]
+console.log(JSON.stringify(patch));
+
+var patched = jiff.patch(patch, a);
+
+// [{&quot;name&quot;:&quot;a&quot;},{&quot;name&quot;:&quot;c&quot;},{&quot;name&quot;:&quot;d&quot;}]
+console.log(JSON.stringify(patched));
+</code></pre><p><a href="https://github.com/cujojs/jiff">https://github.com/cujojs/jiff</a></p>
+</div>
+<div><h1 id="auditability">Auditability</h1>
+<p>Mutating state is evil</p>
+</div>
+<div><p>Actions don&#39;t do anything themselves. Like events they&#39;re just
+instructions coughed out into the void, and the reducer
+can listen in create new state as they happen</p>
+</div>
+<div><h1 id="treating-actions-as-events">Treating actions as events</h1>
+<p>Don&#39;t dispatch a ton with every action</p>
+<p><a href="https://tech.affirm.com/redux-patterns-and-anti-patterns-7d80ef3d53bc">https://tech.affirm.com/redux-patterns-and-anti-patterns-7d80ef3d53bc</a></p>
+</div>
+<div><h1 id="given-an-initial-state-any-series-of-events-will-produce">Given an initial state, any series of events will produce</h1>
+<pre><code>const {chain, setIn} = require(&#39;icepick&#39;);
+
+test(&#39;checkout/traveler/edit&#39;, () =&gt; {
+  const initialState = state;
+
+  const expectedState = chain(state)
+    .setIn([&#39;travelers&#39;, 0, &#39;firstName&#39;], &#39;Tony&#39;)
+    .setIn([&#39;travelers&#39;, 0, &#39;lastName&#39;], &#39;Bradley&#39;)
+    .value();
+
+  // then create some actions we&#39;ll dispatch
+  const result =
+    [
+      { type: &#39;checkout/traveler/edit&#39;,
+        index: 0,
+        key: &#39;firstName&#39;,
+        value: &#39;Tony&#39;
+      },
+      { type: &#39;checkout/traveler/edit&#39;,
+        index: 0,
+        key: &#39;lastName&#39;,
+        value: &#39;Bradley&#39;
+      }
+    ]
+      .reduce(checkoutTravelersReducer, initialState);
+
+  expect(result).toEqual(expectedState);
+});
+</code></pre><p>Not a unique concept right? Except the single atom pattern means all these
+actions have a single path. There&#39;s no place where they can &quot;hide&quot; from us.</p>
+</div>
+<div><h1 id="side-effects-">Side effects!</h1>
+<p>It&#39;s actually easier to break the above pattern then you think!</p>
+<pre><code>function myReducer(state, action) {
+  switch (action.type) {
+    case &#39;CREATE_TODO&#39;:
+      return state.todos.concat([
+        {
+          title: action.title,
+          completed: false,
+          dateCreated: Date.now()
+        }
+      ])
+    default:
+      return state
+  }
+}
+</code></pre></div>
+<div><h1 id="impure-functions-">Impure functions!</h1>
+<p>A function is pure if it&#39;s output is a deterministic result of it&#39;s input,
+and it does not mutate it&#39;s arguments.</p>
+<p>If you only use pure function, this pattern is functional programming- this
+get&#39;s overcomplicated alot....</p>
+<pre><code>let count = 0
+
+export function getIncrement() {
+  count += 1
+  return count
+}
+</code></pre></div>
+<div><h1 id="purity-only-matters-as-part-of-the-surface-level-api">Purity only matters as part of the surface level api</h1>
+<p>This is weird but still pure</p>
+<pre><code>export function doubleAndAddTwo(input) {
+  const doubleArg = input * 2
+
+  function addTwo() {
+    return doubleArg + 2
+  }
+
+  return addTwo()
+}
+</code></pre></div>
+<div><p>Now think of the above, but for views</p>
+</div>
+<div><p>Just as state is a deterministic result of an initial state and all subsequent actions
+dispatched...</p>
+<p>Your view is a deterministic result of it&#39;s one and only argument- your state!</p>
+</div>
+<div><h1 id="when-this-paradigm-breaks">When this paradigm breaks</h1>
+<p><a href="https://formidable.com/blog/2016/07/11/let-the-url-do-the-talking-part-1-the-pain-of-react-router-in-redux/">https://formidable.com/blog/2016/07/11/let-the-url-do-the-talking-part-1-the-pain-of-react-router-in-redux/</a></p>
+<p>React Router is the most common break with this paradigm I generally see.</p>
+<p>There are alternatives though!</p>
+</div>
+<div><h2 id="keep-the-paradigm-">Keep the paradigm!</h2>
+<ol>
+<li>Subscribe to browser events, like link clicks and the <code>onpopstate</code> event. Not
+different than putting an event handler like <code>onClick</code> or <code>onChange</code></li>
+<li>Parse the url into a json object</li>
+<li>dispatch it as an action</li>
+</ol>
+<p><a href="https://www.npmjs.com/package/i40">https://www.npmjs.com/package/i40</a></p>
+<p><a href="https://github.com/abradley2/examples-react-redux-routing/blob/master/src/App.js">https://github.com/abradley2/examples-react-redux-routing/blob/master/src/App.js</a></p>
+</div>
+<div><h1 id="i-hate-local-component-state">I hate local component state</h1>
+<p><a href="https://www.safaribooksonline.com/blog/2015/10/29/react-local-component-state/">https://www.safaribooksonline.com/blog/2015/10/29/react-local-component-state/</a></p>
+<p>Though it&#39;s often a necessary evil...</p>
+</div>
+<div><h1 id="computed-state">Computed State</h1>
+<p>For the love of all that is holy don&#39;t do this</p>
+<pre><code>const initialState = {
+  toggle: false,
+  count: 2,
+  doubleCount: 4
+}
+
+function countReducer(state = initialState, action) {
+  switch (action.type) {
+    case &#39;INCREMENT&#39;:
+      return Object.assign({}, state, {
+        count: state.count + 1,
+        doubleCount: (state.count + 1) * 2
+      })
+
+    case &#39;ON_LINK_IN&#39;:
+      return Object.assign({}, state, {
+        count: action.queryParams.count,
+        toggle: action.queryParams.toggle
+      })
+  }
+}
+</code></pre></div>
+<div><h1 id="use-selectors-instead-">Use selectors instead!</h1>
+<pre><code>const initialState = {
+  toggle: false,
+  count: 2,
+}
+
+export function doubleCount(state) {
+  return state.count * 2
+}
+
+function countReducer(state = initialState, action) {
+  switch (action.type) {
+    case &#39;INCREMENT&#39;:
+      return Object.assign({}, state, {
+        count: state.count + 1,
+      })
+
+    case &#39;ON_LINK_IN&#39;:
+      return Object.assign({}, state, {
+        count: action.queryParams.count,
+        toggle: action.queryParams.toggle
+      })
+  }
+}
+</code></pre></div>
+<div><h1 id="selectors-are-powerful">Selectors are powerful</h1>
+<ol>
+<li>They make your state tree easier to navigate, you don&#39;t only need to use them
+out of the above neccessity, they have value on their own.</li>
+<li>You are always in sync. No running around keeping all state up do date with itself</li>
+</ol>
+</div>
+<div><h1 id="memoize-your-selectors-">Memoize your selectors!</h1>
+<p>I will now <em>very</em> strongly endorse Reselect</p>
+<pre><code>import {
+  emailIsInvalid,
+  firstNameIsInvalid
+} from &#39;../reducer&#39;
+
+function view({state) {
+  return &lt;div&gt;
+    &lt;input
+      value={state.emailAddress}
+      onInput={(e) =&gt; {
+        dispatch({
+          type: &#39;EMAIL_ADDRESS_CHANGED&#39;,
+          newEmailAddress: e.target.value
+        })
+      }}
+    /&gt;
+    &lt;span className=&quot;errorText&quot;&gt;
+      {
+        emailIsInvalid(state.emailAddress)
+          ? &quot;This is not a valid email&quot;
+          : &quot;&quot;
+      }
+    &lt;/span&gt;
+
+    &lt;input
+      value={state.forstName}
+      onInput={() =&gt; {
+
+      }}
+    /&gt;
+    ... you get the idea, this is a big form with validation
+  &lt;/div&gt;
+}
+</code></pre><p>That selectors, as you might have guessed, is a regex. Memoize this!</p>
+</div>
+<div><p>When it is not a pure relationship, but it is a linked relationship, <em>aggressively</em>
+keep that relationship up to date.</p>
+<p><strong>Make illegal state unrepresentable</strong></p>
+<pre><code>const initialState = {
+  outboundFlight: null,
+  returnFlight: null
+}
+
+function reducer(state = initialState, action) {
+  switch (action.type) {
+    case &#39;OUTBOUND_SELECTED&#39;:
+      return set(state, &#39;outboundFlight&#39;, action.newOutboundFlight)
+
+    case &#39;RETURN_SELECTED&#39;:
+      return set(state, &#39;returnFlight&#39;, action.newReturnFlight)
+
+    case &#39;RETURN_DESELECTED&#39;:
+      return set(state, &#39;returnFlight&#39;, null)
+
+    default:
+      return state
+  }
+}
+</code></pre></div>
+<div><h1 id="so-what-s-the-issue-">So what&#39;s the issue?</h1>
+<p>We now allow our events to create an illegal state if we don&#39;t send off the appropriate
+ones every time.</p>
+<p>The reducer should not allow illegal states to exist!</p>
+<pre><code>const initialState = {
+  outboundFlight: null,
+  returnFlight: null
+}
+
+function reducer(state = initialState, action) {
+  switch (action.type) {
+    case &#39;OUTBOUND_SELECTED&#39;:
+      return Object.assign({}, state, {
+        outboundFlight: action.newOutboundFlight,
+        returnFlight: null
+      })
+
+    case &#39;RETURN_SELECTED&#39;:
+      return set(state, &#39;returnFlight&#39;, action.newReturnFlight)
+
+    default:
+      return state
+  }
+}
+</code></pre></div>
+<div><p>This anti-pattern can kill redux apps. If you do this alot you will find yourself
+constantly having to do the correct dispatches in the correct order to maintain a
+legal state.</p>
+<p>Fortunately, it&#39;s <em>VERY</em> easy to spot this and keep it out!
+Anytime you find yourself dispatching a ton of events,
+you are probably not having the reducer aggressively eliminate illegal states.</p>
+</div>
+<div><h1 id="redux-is-also-stupid-simple">Redux is also stupid simple</h1>
+<pre><code>export const ActionTypes = {
+  INIT: &#39;@@redux/INIT&#39;
+}
+
+function bindActionCreator(actionCreator, dispatch) {
+  return function() { return dispatch(actionCreator.apply(this, arguments)) }
+}
+
+export function bindActionCreators(actionCreators, dispatch) {
+  if (typeof actionCreators === &#39;function&#39;) {
+    return bindActionCreator(actionCreators, dispatch)
+  }
+
+  const keys = Object.keys(actionCreators)
+  const boundActionCreators = {}
+  for (let i = 0; i &lt; keys.length; i++) {
+    const key = keys[i]
+    const actionCreator = actionCreators[key]
+    if (typeof actionCreator === &#39;function&#39;) {
+      boundActionCreators[key] = bindActionCreator(actionCreator, dispatch)
+    }
+  }
+  return boundActionCreators
+}
+
+export function compose(...funcs) {
+  if (funcs.length === 0) {
+    return arg =&gt; arg
+  }
+
+  if (funcs.length === 1) {
+    return funcs[0]
+  }
+
+  return funcs.reduce((a, b) =&gt; (...args) =&gt; a(b(...args)))
+}
+
+
+export function applyMiddleware(...middlewares) {
+  return (createStore) =&gt; (...args) =&gt; {
+    const store = createStore(...args)
+    let dispatch = store.dispatch
+    let chain = []
+
+    const middlewareAPI = {
+      getState: store.getState,
+      dispatch: (...args) =&gt; dispatch(...args)
+    }
+    chain = middlewares.map(middleware =&gt; middleware(middlewareAPI))
+    dispatch = compose(...chain)(store.dispatch)
+
+    return {
+      ...store,
+      dispatch
+    }
+  }
+}
+
+export function createStore(reducer, preloadedState, enhancer) {
+  if (typeof preloadedState === &#39;function&#39; &amp;&amp; typeof enhancer === &#39;undefined&#39;) {
+    enhancer = preloadedState
+    preloadedState = undefined
+  }
+
+  if (typeof enhancer !== &#39;undefined&#39;) {
+    return enhancer(createStore)(reducer, preloadedState)
+  }
+
+  let currentReducer = reducer
+  let currentState = preloadedState
+
+  function getState() {
+    return currentState
+  }
+
+  function dispatch(action) {
+    currentState = currentReducer(currentState, action)
+
+    return action
+  }
+
+  function replaceReducer(nextReducer) {
+    if (typeof nextReducer !== &#39;function&#39;) {
+      throw new Error(&#39;Expected the nextReducer to be a function.&#39;)
+    }
+
+    currentReducer = nextReducer
+    dispatch({ type: ActionTypes.INIT })
+  }
+
+  dispatch({ type: ActionTypes.INIT })
+
+  return {
+    dispatch,
+    subscribe,
+    getState,
+    replaceReducer,
+  }
+}
+</code></pre></div>
+<div><h1 id="the-atom-">The &quot;Atom&quot;</h1>
+<p>The atom is top level. The atom is independent, no component owns it.</p>
+<p>The view is DETERMINISTIC consequence of the state atom. So long as the atom is unchanged,
+you can</p>
+</div>
+<div><h1 id="bringing-in-other-external-state">Bringing in other external state</h1>
+<p>Similar to the url, it&#39;s pretty easy to think jsut because you aren&#39;t using .setState
+you aren&#39;t protecting your view from being non-functional</p>
+<p>So here&#39;s how you do media queries!</p>
+</div>
+<div><h1 id="where-to-optimize">Where to optimize</h1>
+<p>In the case of memoizing you are basically getting a free optimization.</p>
+<p>Do all optimizations that have no cost to code readability before you do
+optimizations that have a cost to code readability.</p>
+<p>Javascript is actually really fucking fast given what it needs to do</p>
+</div>
+<div><h1 id="side-effects">Side effects</h1>
+<p>Server&#39;s are lying bastards not to be trusted</p>
+</div>
+<div><h1 id="reacting-asynchronously-to-synchronous-state-changes">Reacting asynchronously to synchronous state changes</h1>
+<p>Will receieve props</p>
+</div>
+</body>
+</html>
