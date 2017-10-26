@@ -530,6 +530,12 @@ Though it's often a necessary evil...
 
 ---
 
+Make illegal states unrepresentable
+
+https://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/
+
+---
+
 # Computed State
 
 For the love of all that is holy don't do this
@@ -600,7 +606,7 @@ out of the above neccessity, they have value on their own.
 
 # Memoize your selectors!
 
-I will now _very_ strongly endorse Reselect   
+I will now _very_ strongly endorse Reselect
 
 https://github.com/reactjs/reselect/blob/master/src/index.js
 

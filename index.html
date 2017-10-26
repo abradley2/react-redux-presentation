@@ -125,9 +125,9 @@ and stuff on the object.</p>
 }
 </code></pre></div>
 <div><h1 id="diffing-and-patching-">Diffing and Patching!</h1>
-<p>You can diff the new vdom against the old vdom for a clean diff OR
-&quot;diff&quot; the new vdom against the dom as is. Latter approach is generally
-more efficient.</p>
+<p>On each new render another vdom is created. It then walks down this vdom, which is
+parallel to the real dom after the first render, so as it finds discrepencies between the
+vdom and the real dom it patches appropriately.</p>
 </div>
 <div><h1 id="virtual-dom">Virtual DOM</h1>
 <p>There&#39;s a ton of virtual dom libraries out there like React. They all work pretty
@@ -140,6 +140,8 @@ similar.</p>
 <li>Choo</li>
 <li>Yo-Yo</li>
 <li>Elm</li>
+<li>HyperApp</li>
+<li>Marko</li>
 </ul>
 </div>
 <div><h1 id="the-synthetic-event-system-">The synthetic event system!</h1>
@@ -221,6 +223,8 @@ function (state, action) {
 </div>
 <div><p>But we cheat! Since the main benefit of &quot;create new, don&#39;t mutate&quot; is diffs,
 then the only thing we need to be immutable are those parts of state we touch.</p>
+<hr />
+
 <p>Therefore we can be &quot;immutable, but performant&quot; because we aren&#39;t <em>really</em>
 throwing away the entire structure.</p>
 <p><a href="https://github.com/markerikson/redux-ecosystem-links/blob/master/immutable-data.md#immutable-update-utilities">https://github.com/markerikson/redux-ecosystem-links/blob/master/immutable-data.md#immutable-update-utilities</a></p>
@@ -338,10 +342,59 @@ export function getIncrement() {
 dispatched...</p>
 <p>Your view is a deterministic result of it&#39;s one and only argument- your state!</p>
 </div>
-<div><h1 id="when-this-paradigm-breaks">When this paradigm breaks</h1>
+<div><p>It&#39;s very convenient to have this assurance but-</p>
+<p>scroll position, url and route params, mouse position, media queries, window size.</p>
+</div>
+<div><h1 id="when-this-paradigm-breaks-1">When this paradigm breaks #1</h1>
+<p>You will almost definitely need to care about window size not matter how hard you fight it...</p>
+<pre><code>const tabletUpMq = window.matchMedia(&#39;(min-width: 600px)&#39;);
+const desktopUpMq = window.matchMedia(&#39;(min-width: 960px)&#39;);
+
+const initialState = {
+  tableUp: false,
+  desktopUp: false
+}
+
+function mediaReducer(state = initialState, action) {
+  switch (action.type) {
+    case &#39;TABLET_UP&#39;:
+      return set(state, &#39;tabletUp&#39;, action.matches)
+    case &#39;DESKTOP_UP&#39;:
+      return set(state, &#39;desktopUp&#39;, action.matches)
+    default:
+      return state
+  }
+}
+
+export const mediaSubscription = (dispatch) =&gt; {
+  const checkTablet = () =&gt; {
+    dispatch({ type: &#39;TABLET_UP&#39;, matches: tabletUpMq.matches });
+  };
+
+  const checkDesktop = () =&gt; {
+    dispatch({ type: &#39;DESKTOP_UP&#39;, matches: desktopUpMq.matches });
+  };
+
+  tabletUpMq.addListener(checkTablet);
+  desktopUpMq.addListener(checkDesktop);
+};
+</code></pre></div>
+<div><p>If all that seemed like alot, a ton of people have implemented this pattern so npm
+install or whateva</p>
+<p><a href="https://www.npmjs.com/package/redux-responsive">https://www.npmjs.com/package/redux-responsive</a>
+<a href="https://www.npmjs.com/package/redux-mediaquery">https://www.npmjs.com/package/redux-mediaquery</a></p>
+</div>
+<div><h1 id="when-this-paradigm-breaks-1">When this paradigm breaks #1</h1>
 <p><a href="https://formidable.com/blog/2016/07/11/let-the-url-do-the-talking-part-1-the-pain-of-react-router-in-redux/">https://formidable.com/blog/2016/07/11/let-the-url-do-the-talking-part-1-the-pain-of-react-router-in-redux/</a></p>
+<ul>
+<li>React Router assumes that certain “container” components should have a say in state architecture. Redux liberates your components from making any decisions about state.</li>
+<li>Mixing these responsibilities creates coupling between your state container and your view layer.</li>
+</ul>
 <p>React Router is the most common break with this paradigm I generally see.</p>
 <p>There are alternatives though!</p>
+<p><a href="https://www.npmjs.com/package/i40">https://www.npmjs.com/package/i40</a></p>
+<p><a href="https://www.npmjs.com/package/path-to-regexp">https://www.npmjs.com/package/path-to-regexp</a></p>
+<p><a href="https://www.npmjs.com/package/redux-routing">https://www.npmjs.com/package/redux-routing</a></p>
 </div>
 <div><h2 id="keep-the-paradigm-">Keep the paradigm!</h2>
 <ol>
@@ -350,7 +403,6 @@ different than putting an event handler like <code>onClick</code> or <code>onCha
 <li>Parse the url into a json object</li>
 <li>dispatch it as an action</li>
 </ol>
-<p><a href="https://www.npmjs.com/package/i40">https://www.npmjs.com/package/i40</a></p>
 <p><a href="https://github.com/abradley2/examples-react-redux-routing/blob/master/src/App.js">https://github.com/abradley2/examples-react-redux-routing/blob/master/src/App.js</a></p>
 </div>
 <div><h1 id="i-hate-local-component-state">I hate local component state</h1>
@@ -414,8 +466,10 @@ out of the above neccessity, they have value on their own.</li>
 </ol>
 </div>
 <div><h1 id="memoize-your-selectors-">Memoize your selectors!</h1>
-<p>I will now <em>very</em> strongly endorse Reselect</p>
-<pre><code>import {
+<p>I will now <em>very</em> strongly endorse Reselect   </p>
+<p><a href="https://github.com/reactjs/reselect/blob/master/src/index.js">https://github.com/reactjs/reselect/blob/master/src/index.js</a></p>
+</div>
+<div><pre><code>import {
   emailIsInvalid,
   firstNameIsInvalid
 } from &#39;../reducer&#39;
@@ -438,14 +492,6 @@ function view({state) {
           : &quot;&quot;
       }
     &lt;/span&gt;
-
-    &lt;input
-      value={state.forstName}
-      onInput={() =&gt; {
-
-      }}
-    /&gt;
-    ... you get the idea, this is a big form with validation
   &lt;/div&gt;
 }
 </code></pre><p>That selectors, as you might have guessed, is a regex. Memoize this!</p>
@@ -453,6 +499,7 @@ function view({state) {
 <div><p>When it is not a pure relationship, but it is a linked relationship, <em>aggressively</em>
 keep that relationship up to date.</p>
 <p><strong>Make illegal state unrepresentable</strong></p>
+<p><a href="https://github.com/PotomacInnovation/meo-frontend/pull/459/commits/8f66eb011412d6ed55c69b5f9443565b8907ca05">https://github.com/PotomacInnovation/meo-frontend/pull/459/commits/8f66eb011412d6ed55c69b5f9443565b8907ca05</a></p>
 <pre><code>const initialState = {
   outboundFlight: null,
   returnFlight: null
@@ -510,6 +557,10 @@ you are probably not having the reducer aggressively eliminate illegal states.</
 <pre><code>export const ActionTypes = {
   INIT: &#39;@@redux/INIT&#39;
 }
+
+export const combinReducers = map =&gt; (...args) =&gt; Object.keys(map).reduce((state, key) =&gt; {
+  return Object.assign(state, { [key]: map[key](...args) });
+}, {});
 
 function bindActionCreator(actionCreator, dispatch) {
   return function() { return dispatch(actionCreator.apply(this, arguments)) }
@@ -607,27 +658,53 @@ export function createStore(reducer, preloadedState, enhancer) {
   }
 }
 </code></pre></div>
-<div><h1 id="the-atom-">The &quot;Atom&quot;</h1>
-<p>The atom is top level. The atom is independent, no component owns it.</p>
-<p>The view is DETERMINISTIC consequence of the state atom. So long as the atom is unchanged,
-you can</p>
-</div>
-<div><h1 id="bringing-in-other-external-state">Bringing in other external state</h1>
-<p>Similar to the url, it&#39;s pretty easy to think jsut because you aren&#39;t using .setState
-you aren&#39;t protecting your view from being non-functional</p>
-<p>So here&#39;s how you do media queries!</p>
-</div>
-<div><h1 id="where-to-optimize">Where to optimize</h1>
+<div><h1 id="suggestion-where-to-optimize">Suggestion: where to optimize</h1>
 <p>In the case of memoizing you are basically getting a free optimization.</p>
 <p>Do all optimizations that have no cost to code readability before you do
 optimizations that have a cost to code readability.</p>
-<p>Javascript is actually really fucking fast given what it needs to do</p>
 </div>
 <div><h1 id="side-effects">Side effects</h1>
-<p>Server&#39;s are lying bastards not to be trusted</p>
+<p>Server&#39;s are liars and not to be trusted</p>
+<p>In redux we generally don&#39;t call this a &quot;side effect&quot; and assert it&#39;s purely functional</p>
+<pre><code>const someRequest = () =&gt; {
+  return get(&#39;/some/json&#39;)
+    .then((result) =&gt; {
+      dispatch({
+        type: &#39;GOT_JSON&#39;,
+        dontGoJsonWaterfalls: result
+      })
+    })
+}
+</code></pre><p>You can use redux-thunk, redux-saga, or with redux-logic (I like redux-logic alot),
+they all have the same issue- which is Redux only cares about &quot;actions&quot; not &quot;effects&quot;</p>
+<p>Like the <code>Date.now()</code> example, resulting state is still a deterministic result of
+the action dispatches, so long as any randomness happens as early as the action
+and not in the reducer</p>
 </div>
-<div><h1 id="reacting-asynchronously-to-synchronous-state-changes">Reacting asynchronously to synchronous state changes</h1>
-<p>Will receieve props</p>
+<div><h1 id="alternative-thoughts">Alternative thoughts</h1>
+<p>In Elm, actions dispatches themselves must be deterministic.</p>
+<p>No two actions can be dispatched differently given</p>
+<ol>
+<li>The same event on the UI</li>
+<li>The same UI appearing</li>
+<li>The same state of the application</li>
+</ol>
+<p>Redux doesn&#39;t really care about this, what is generally called &quot;effects&quot; in event
+sourcing</p>
+</div>
+<div><p>Anytime an action dispatched from a UI event can be different even though the UI
+is exactly the same and the state is exactly the smame (should be no difference anyhow)
+this is an <em>effect</em></p>
+<p>Not just in the Elm architecture, but Redux-alikes like Vuex do this.</p>
+</div>
+<div><p>Why does the classification matter?</p>
+<p>Because based on the classification as an effect the architecture can force you to define
+what are <em>acceptable</em> results of the effect- the query to your server, and force you to
+dispatch a <em>different</em> action on success or failure to meet that criteria.</p>
+</div>
+<div><h1 id="the-structure-of-a-redux-app">The Structure of a Redux App</h1>
+<p>Here you go
+<a href="https://github.com/reactjs/redux/tree/master/examples/todomvc">https://github.com/reactjs/redux/tree/master/examples/todomvc</a></p>
 </div>
 </body>
 </html>
